@@ -25,7 +25,7 @@ from oauth2client.service_account import ServiceAccountCredentials
 BOT_TOKEN = "8531632256:AAEc9P5iTFwA9a13YI0zv9-0DQayBQEOLLk"
 ADMIN_CHAT_ID = 1563018448
 
-WEBHOOK_HOST = "https://taxibotpy.up.railway.app"  # ТВОЙ Railway URL
+WEBHOOK_HOST = "https://taxibotpy.up.railway.app/webhook"  # ТВОЙ Railway URL
 WEBHOOK_PATH = /webhook
 WEBHOOK_URL = f"{WEBHOOK_HOST}{WEBHOOK_PATH}"
 
@@ -320,5 +320,6 @@ async def on_shutdown():
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
+
 
 
