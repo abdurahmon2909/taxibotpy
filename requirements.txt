@@ -1,0 +1,5 @@
+aiogram==3.4.1
+gspread==6.0.0
+oauth2client
+fastapi
+uvicorn[standard]
