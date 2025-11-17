@@ -20,15 +20,15 @@ from oauth2client.service_account import ServiceAccountCredentials
 # CONFIG
 # -----------------------------------------------------------
 
-BOT_TOKEN = "YOUR_TOKEN"
+BOT_TOKEN = "8531632256:AAEc9P5iTFwA9a13YI0zv9-0DQayBQEOLLk"
 ADMIN_CHAT_ID = 1563018448
 
-WEBHOOK_HOST = "https://YOUR-RAILWAY-APP.up.railway.app"
+WEBHOOK_HOST = "https://taxibotpy.up.railway.app"
 WEBHOOK_PATH = f"/webhook/{BOT_TOKEN}"
 WEBHOOK_URL = f"{WEBHOOK_HOST}{WEBHOOK_PATH}"
 
 SERVICE_ACCOUNT_FILE = "service_account.json"
-SPREADSHEET_ID = "YOUR_SHEET_ID"
+SPREADSHEET_ID = "1XNXM8b1FJ-uGcsCgEVQFzVWE6S8xS9zFjBGySY7Lfas"
 WORKSHEET_NAME = "Orders"
 
 # -----------------------------------------------------------
@@ -337,3 +337,4 @@ async def on_shutdown():
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
+
