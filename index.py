@@ -13,6 +13,8 @@ from aiogram.client.default import DefaultBotProperties
 from fastapi import FastAPI, Request
 import uvicorn
 
+from aiogram.types import Update
+
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
 
@@ -124,13 +126,23 @@ def when_keyboard():
 async def cmd_start(message: Message, state: FSMContext):
     await state.clear()
 
+    # 🔹 сохраняем данные пользователя (как в твоём эталонном коде)
+    await state.update_data(
+        user_id=message.from_user.id,
+        username=message.from_user.username or "",
+        full_name=message.from_user.full_name or "",
+    )
+
     full = message.from_user.full_name
-    hello_text = f"👋 Assalomu alaykum, <b>{full}</b>!\n\n" \
-                 f"📱 Iltimos, telefon raqamingizni yuboring 👇"
+    hello_text = (
+        f"👋 Assalomu alaykum, <b>{full}</b>!\n\n"
+        "📱 Iltimos, telefon raqamingizni yuboring 👇"
+    )
 
     sent = await message.answer(hello_text, reply_markup=phone_keyboard())
     await state.update_data(message_id=sent.message_id)
     await state.set_state(TaxiForm.waiting_phone)
+
 
 # -----------------------------------------------------------
 # UPDATE MESSAGE FUNCTION (Чтобы менять, а не спамить)
@@ -288,9 +300,11 @@ async def finish_order(chat_id, state: FSMContext):
 
 @app.post(WEBHOOK_PATH)
 async def webhook(request: Request):
-    update = await request.json()
+    data = await request.json()
+    update = Update.model_validate(data)  # превращаем dict в Update
     await dp.feed_update(bot, update)
     return {"ok": True}
+
 
 @app.on_event("startup")
 async def on_startup():
@@ -306,3 +320,4 @@ async def on_shutdown():
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=8000)
+
