@@ -39,11 +39,16 @@ WORKSHEET_NAME = "Orders"
 import os
 import base64
 import json
-from oauth2client.service_account import ServiceAccountCredentials
-import gspread
 
 def get_sheet():
     try:
+        b64 = os.getenv("GOOGLE_CREDS")
+        if not b64:
+            raise Exception("GOOGLE_CREDS environment variable missing!")
+
+        creds_json = base64.b64decode(b64).decode("utf-8")
+        creds_dict = json.loads(creds_json)
+
         scope = [
             "https://spreadsheets.google.com/feeds",
             "https://www.googleapis.com/auth/spreadsheets",
@@ -51,30 +56,19 @@ def get_sheet():
             "https://www.googleapis.com/auth/drive",
         ]
 
-        # Read base64 from environment
-        creds_base64 = os.getenv("GOOGLE_CREDS")
-        if not creds_base64:
-            raise Exception("GOOGLE_CREDS environment variable not set")
-
-        # Decode base64 → JSON
-        creds_json = base64.b64decode(creds_base64).decode("utf-8")
-        creds_dict = json.loads(creds_json)
-
-        creds = ServiceAccountCredentials.from_json_keyfile_dict(
-            creds_dict, scope
-        )
+        creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
         client = gspread.authorize(creds)
-
         sheet = client.open_by_key(SPREADSHEET_ID)
 
         try:
             ws = sheet.worksheet(WORKSHEET_NAME)
         except gspread.WorksheetNotFound:
             ws = sheet.add_worksheet(WORKSHEET_NAME, rows="2000", cols="20")
-            ws.append_row([
+            headers = [
                 "Timestamp", "User ID", "Username", "Full Name",
                 "Phone", "Route", "Point A", "Point B", "When"
-            ])
+            ]
+            ws.append_row(headers)
 
         return ws
 
@@ -421,4 +415,5 @@ async def finish_order(message: Message, state: FSMContext):
 if __name__ == "__main__":
     logging.info("Bot ishga tushdi...")
     dp.run_polling(bot)
+
 
