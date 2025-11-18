@@ -37,42 +37,44 @@ WORKSHEET_NAME = "Orders"
 # =========================================================
 
 import json
+import gspread
+from oauth2client.service_account import ServiceAccountCredentials
 import os
+
 
 def get_sheet():
     try:
-        creds_path = os.getenv("GOOGLE_CREDS_FILE")
-        if not creds_path:
-            raise Exception("GOOGLE_CREDS_FILE not found")
+        google_creds_json = os.getenv("GOOGLE_CREDS")
 
-        with open(creds_path, "r") as f:
-            creds_dict = json.load(f)
+        if not google_creds_json:
+            raise Exception("GOOGLE_CREDS environment variable not found")
+
+        google_creds = json.loads(google_creds_json)
 
         scope = [
             "https://spreadsheets.google.com/feeds",
-            "https://www.googleapis.com/auth/spreadsheets",
-            "https://www.googleapis.com/auth/drive.file",
             "https://www.googleapis.com/auth/drive",
         ]
 
-        creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
+        creds = ServiceAccountCredentials.from_json_keyfile_dict(google_creds, scope)
 
         client = gspread.authorize(creds)
+
         sheet = client.open_by_key(SPREADSHEET_ID)
 
         try:
-            return sheet.worksheet(WORKSHEET_NAME)
+            ws = sheet.worksheet(WORKSHEET_NAME)
         except gspread.WorksheetNotFound:
             ws = sheet.add_worksheet(WORKSHEET_NAME, rows="2000", cols="20")
-            ws.append_row([
-                "Timestamp", "User ID", "Username", "Full Name",
-                "Phone", "Route", "Point A", "Point B", "When"
-            ])
-            return ws
+            ws.append_row(["Timestamp", "User ID", "Username", "Full Name",
+                           "Phone", "Route", "Point A", "Point B", "When"])
+
+        return ws
 
     except Exception as e:
         logging.error(f"Google Sheets xatosi: {e}")
         return None
+
 
 
 # =========================================================
@@ -412,6 +414,7 @@ async def finish_order(message: Message, state: FSMContext):
 if __name__ == "__main__":
     logging.info("Bot ishga tushdi...")
     dp.run_polling(bot)
+
 
 
 
