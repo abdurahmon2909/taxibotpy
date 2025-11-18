@@ -36,18 +36,17 @@ WORKSHEET_NAME = "Orders"
 # 📌 GOOGLE SHEETS
 # =========================================================
 
-import os
-import base64
 import json
+import os
 
 def get_sheet():
     try:
-        b64 = os.getenv("GOOGLE_CREDS")
-        if not b64:
-            raise Exception("GOOGLE_CREDS environment variable missing!")
+        creds_path = os.getenv("GOOGLE_CREDS_FILE")
+        if not creds_path:
+            raise Exception("GOOGLE_CREDS_FILE not found")
 
-        creds_json = base64.b64decode(b64).decode("utf-8")
-        creds_dict = json.loads(creds_json)
+        with open(creds_path, "r") as f:
+            creds_dict = json.load(f)
 
         scope = [
             "https://spreadsheets.google.com/feeds",
@@ -57,25 +56,23 @@ def get_sheet():
         ]
 
         creds = ServiceAccountCredentials.from_json_keyfile_dict(creds_dict, scope)
+
         client = gspread.authorize(creds)
         sheet = client.open_by_key(SPREADSHEET_ID)
 
         try:
-            ws = sheet.worksheet(WORKSHEET_NAME)
+            return sheet.worksheet(WORKSHEET_NAME)
         except gspread.WorksheetNotFound:
             ws = sheet.add_worksheet(WORKSHEET_NAME, rows="2000", cols="20")
-            headers = [
+            ws.append_row([
                 "Timestamp", "User ID", "Username", "Full Name",
                 "Phone", "Route", "Point A", "Point B", "When"
-            ]
-            ws.append_row(headers)
-
-        return ws
+            ])
+            return ws
 
     except Exception as e:
         logging.error(f"Google Sheets xatosi: {e}")
         return None
-
 
 
 # =========================================================
@@ -415,5 +412,6 @@ async def finish_order(message: Message, state: FSMContext):
 if __name__ == "__main__":
     logging.info("Bot ishga tushdi...")
     dp.run_polling(bot)
+
 
 
