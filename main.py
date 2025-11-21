@@ -26,8 +26,8 @@ BOT_TOKEN = "8507912374:AAEu0nt3DWP7vAlDgcO4F2CORpWZWeTcq-o"
 ADMIN_CHAT_ID = 1563018448
 
 CHANNEL_ID = -1002836724965
-CHANNEL_USERNAME = "Beshariq_Toshkent_taxiuz2"
-CHANNEL_LINK = "https://t.me/Beshariq_Toshkent_taxiuz2"
+CHANNEL_USERNAME = "Beshariq_Toshkent_taxi2"
+CHANNEL_LINK = "https://t.me/Beshariq_Toshkent_taxi2"
 
 SERVICE_ACCOUNT_FILE = "service_account.json"
 SPREADSHEET_ID = "1XNXM8b1FJ-uGcsCgEVQFzVWE6S8xS9zFjBGySY7Lfas"
@@ -488,3 +488,4 @@ async def finish_order(message: Message, state: FSMContext):
 if __name__ == "__main__":
     logging.info("Bot ishga tushdi...")
     dp.run_polling(bot)
+
