@@ -23,7 +23,7 @@ import os
 # =========================================================
 
 BOT_TOKEN = "8507912374:AAEu0nt3DWP7vAlDgcO4F2CORpWZWeTcq-o"
-ADMIN_CHAT_ID = 1563018448
+ADMIN_CHAT_ID = 8167334768
 
 CHANNEL_ID = -1002836724965
 CHANNEL_USERNAME = "Beshariq_Toshkent_taxi2"
@@ -489,6 +489,7 @@ async def finish_order(message: Message, state: FSMContext):
 if __name__ == "__main__":
     logging.info("Bot ishga tushdi...")
     dp.run_polling(bot)
+
 
 
 
