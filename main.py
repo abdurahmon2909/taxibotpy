@@ -233,12 +233,12 @@ async def bot_chat_member_update(event: types.ChatMemberUpdated):
 async def update_pin(message: Message):
     chat_id = message.chat.id
 
-    # Фото
-    photo_path = "https://i.postimg.cc/65KNVBrh/Phoenix-09-Logo-for-a-taxi-service-from-Beshariq-to-Tashkent-f-1.jpg"
+    # Фото по URL — можно указывать напрямую
+    photo_url = "https://i.postimg.cc/65KNVBrh/Phoenix-09-Logo-for-a-taxi-service-from-Beshariq-to-Tashkent-f-1.jpg"
 
     sent_photo = await bot.send_photo(
-        chat_id,
-        photo=open(photo_path, "rb"),
+        chat_id=chat_id,
+        photo=photo_url,
         caption="🚕 *Beshariq ↔ Toshkent Taxi*\nIshonchli va tezkor xizmat!",
         parse_mode="Markdown"
     )
@@ -259,6 +259,7 @@ async def update_pin(message: Message):
     await bot.pin_chat_message(chat_id, sent_button.message_id)
 
     await message.answer("📌 Pinned successfully!")
+
 
 
 
@@ -488,5 +489,6 @@ async def finish_order(message: Message, state: FSMContext):
 if __name__ == "__main__":
     logging.info("Bot ishga tushdi...")
     dp.run_polling(bot)
+
 
 
