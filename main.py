@@ -35,9 +35,7 @@ WORKSHEET_NAME = "Orders"
 
 # 📌 Баннер, который будет отправляться и закрепляться в группе
 PIN_BANNER_TEXT = (
-    "<b>🚖 Beshariq ↔ Toshkent TAXI</b>\n\n"
-    "Telegram orqali oddiy va tez taxi chaqiring!\n"
-    "Quyidagi bot orqali buyurtma bering:\n\n"
+    "<b>🚖 TAXI CHAQIRISH </b>\n\n"
     "👉 @beshariqtoshkenttaxi2bot\n\n"
     "⏰  Har kuni, qulay va tezkor xizmat! "
 )
@@ -233,33 +231,35 @@ async def bot_chat_member_update(event: types.ChatMemberUpdated):
 
 @dp.message(Command("updatepin"))
 async def update_pin(message: Message):
-    """
-    Ручное обновление закреплённого баннера в группе.
-    """
-    # Только в группах
-    if message.chat.type not in ("group", "supergroup"):
-        await message.answer("Bu buyruq faqat guruhlarda ishlaydi.")
-        return
+    chat_id = message.chat.id
 
-    # Проверяем, админ ли пользователь
-    try:
-        member = await bot.get_chat_member(message.chat.id, message.from_user.id)
-        if member.status not in ("administrator", "creator"):
-            await message.answer("Bu buyruq faqat guruh administratorlari uchun.")
-            return
-    except Exception as e:
-        logging.error(f"Admin check error: {e}")
-        await message.answer("Adminlikni tekshirishda xatolik yuz berdi.")
-        return
+    # Фото
+    photo_path = "https://i.postimg.cc/65KNVBrh/Phoenix-09-Logo-for-a-taxi-service-from-Beshariq-to-Tashkent-f-1.jpg"
 
-    # Отправляем новый баннер и закрепляем
-    msg = await message.answer(PIN_BANNER_TEXT)
-    try:
-        await bot.pin_chat_message(message.chat.id, msg.message_id, disable_notification=True)
-        await message.answer("🔝 Yangi xabar yuborildi va pin qilindi.")
-    except Exception as e:
-        logging.error(f"Pin update error: {e}")
-        await message.answer(f"⚠️ Pin qilishda xatolik: {e}")
+    sent_photo = await bot.send_photo(
+        chat_id,
+        photo=open(photo_path, "rb"),
+        caption="🚕 *Beshariq ↔ Toshkent Taxi*\nIshonchli va tezkor xizmat!",
+        parse_mode="Markdown"
+    )
+
+    # Сообщение с кнопкой
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="✅ TAKSI CHAQIRISH", url="https://t.me/beshariqtoshkenttaxi2bot")]
+    ])
+
+    sent_button = await bot.send_message(
+        chat_id,
+        "👇 Quyidagi tugma orqali taksi chaqiring:",
+        reply_markup=keyboard
+    )
+
+    # Пин двух сообщений
+    await bot.pin_chat_message(chat_id, sent_photo.message_id)
+    await bot.pin_chat_message(chat_id, sent_button.message_id)
+
+    await message.answer("📌 Pinned successfully!")
+
 
 
 # =========================================================
@@ -488,4 +488,5 @@ async def finish_order(message: Message, state: FSMContext):
 if __name__ == "__main__":
     logging.info("Bot ishga tushdi...")
     dp.run_polling(bot)
+
 
