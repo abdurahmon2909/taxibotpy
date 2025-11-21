@@ -12,8 +12,10 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
 from aiogram.client.default import DefaultBotProperties
 
+import json
 import gspread
 from oauth2client.service_account import ServiceAccountCredentials
+import os
 
 
 # =========================================================
@@ -31,16 +33,19 @@ SERVICE_ACCOUNT_FILE = "service_account.json"
 SPREADSHEET_ID = "1XNXM8b1FJ-uGcsCgEVQFzVWE6S8xS9zFjBGySY7Lfas"
 WORKSHEET_NAME = "Orders"
 
+# 📌 Баннер, который будет отправляться и закрепляться в группе
+PIN_BANNER_TEXT = (
+    "<b>🚖 Beshariq ↔ Toshkent TAXI</b>\n\n"
+    "Telegram orqali oddiy va tez taxi chaqiring!\n"
+    "Quyidagi bot orqali buyurtma bering:\n\n"
+    "👉 @beshariqtoshkenttaxi2bot\n\n"
+    "⏰  Har kuni, qulay va tezkor xizmat! "
+)
+
 
 # =========================================================
 # 📌 GOOGLE SHEETS
 # =========================================================
-
-import json
-import gspread
-from oauth2client.service_account import ServiceAccountCredentials
-import os
-
 
 def get_sheet():
     try:
@@ -76,7 +81,6 @@ def get_sheet():
         return None
 
 
-
 # =========================================================
 # 📍 DISTRICTS
 # =========================================================
@@ -98,7 +102,7 @@ DISTRICTS_TOSHKENT = [
 
 DISTRICTS_BESHARIQ = [
     "Beshariq markazi", "Zarqaynar", "Yakkatut",
-    "Shoberdi", "Qizilbayroq", "Uvada", "Kulol","Tovul"
+    "Shoberdi", "Qizilbayroq", "Uvada", "Kulol", "Tovul"
 ]
 
 
@@ -180,7 +184,8 @@ async def is_subscribed(user_id: int, bot: Bot) -> bool:
     try:
         member = await bot.get_chat_member(CHANNEL_ID, user_id)
         return member.status in ("member", "administrator", "creator")
-    except:
+    except Exception as e:
+        logging.error(f"Obunani tekshirishda xatolik: {e}")
         return False
 
 
@@ -197,6 +202,65 @@ bot = Bot(
 dp = Dispatcher()
 
 
+# =========================================================
+# 📌 AUTO PIN BANNER IN GROUPS
+# =========================================================
+
+@dp.my_chat_member()
+async def bot_chat_member_update(event: types.ChatMemberUpdated):
+    """
+    Авто-пин баннера, когда бота добавили в группу/сделали админом.
+    """
+    try:
+        new_status = event.new_chat_member.status
+        chat = event.chat
+
+        # Только для групп/супергрупп
+        if chat.type not in ("group", "supergroup"):
+            return
+
+        # Если бот стал участником или админом
+        if new_status in ("member", "administrator"):
+            msg = await bot.send_message(chat.id, PIN_BANNER_TEXT)
+            try:
+                await bot.pin_chat_message(chat.id, msg.message_id, disable_notification=True)
+                logging.info(f"Pinned banner in chat {chat.id}")
+            except Exception as e:
+                logging.error(f"Pin error in chat {chat.id}: {e}")
+    except Exception as e:
+        logging.error(f"my_chat_member handler error: {e}")
+
+
+@dp.message(Command("updatepin"))
+async def update_pin(message: Message):
+    """
+    Ручное обновление закреплённого баннера в группе.
+    """
+    # Только в группах
+    if message.chat.type not in ("group", "supergroup"):
+        await message.answer("Bu buyruq faqat guruhlarda ishlaydi.")
+        return
+
+    # Проверяем, админ ли пользователь
+    try:
+        member = await bot.get_chat_member(message.chat.id, message.from_user.id)
+        if member.status not in ("administrator", "creator"):
+            await message.answer("Bu buyruq faqat guruh administratorlari uchun.")
+            return
+    except Exception as e:
+        logging.error(f"Admin check error: {e}")
+        await message.answer("Adminlikni tekshirishda xatolik yuz berdi.")
+        return
+
+    # Отправляем новый баннер и закрепляем
+    msg = await message.answer(PIN_BANNER_TEXT)
+    try:
+        await bot.pin_chat_message(message.chat.id, msg.message_id, disable_notification=True)
+        await message.answer("🔝 Yangi xabar yuborildi va pin qilindi.")
+    except Exception as e:
+        logging.error(f"Pin update error: {e}")
+        await message.answer(f"⚠️ Pin qilishda xatolik: {e}")
+
 
 # =========================================================
 # 🟢 START
@@ -210,7 +274,7 @@ async def start_cmd(message: Message, state: FSMContext):
         await message.answer(
             f"👋 Assalomu alaykum, hurmatli {message.from_user.full_name}!\n\n"
             f"Safar uchun chegirmalar, bonuslar🎁 va yangiliklardan xabardor bo`lish uchun bizga qo`shiling:\n\n"
-            
+            f"@{CHANNEL_USERNAME}\n\n"
             f"Va tekshirish tugmasini bosing 👇",
             reply_markup=check_sub_keyboard()
         )
@@ -370,33 +434,38 @@ async def finish_order(message: Message, state: FSMContext):
 
     timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-    # Save to Sheet
-    sheet.append_row([
-        timestamp,
-        data["user_id"],
-        data["username"],
-        data["full_name"],
-        data["phone"],
-        data["route"],
-        data["point_a"],
-        data["point_b"],
-        data["when"]
-    ])
+    if sheet is not None:
+        # Save to Sheet
+        sheet.append_row([
+            timestamp,
+            data["user_id"],
+            data["username"],
+            data["full_name"],
+            data["phone"],
+            data["route"],
+            data["point_a"],
+            data["point_b"],
+            data["when"]
+        ])
+    else:
+        logging.error("Sheet is None, skip append_row")
 
     admin_text = (
-    "🚖 <b>Yangi buyurtma!</b>\n\n"
-    f"🕒 {timestamp}\n"
-    f"👤 <b>Ism:</b> {data['full_name']}\n"
-    f"🔗 <b>Username:</b> @{data['username'] if data['username'] else '-'}\n"
-    f"📞 <b>Telefon:</b> {data['phone']}\n\n"
-    f"🛣 <b>Yo'nalish:</b> {data['route']}\n"
-    f"📍 <b>Qayerdan:</b> {data['point_a']}\n"
-    f"📍 <b>Qayerga:</b> {data['point_b']}\n"
-    f"🗓 <b>Ketish vaqti:</b> {data['when']}"
+        "🚖 <b>Yangi buyurtma!</b>\n\n"
+        f"🕒 {timestamp}\n"
+        f"👤 <b>Ism:</b> {data['full_name']}\n"
+        f"🔗 <b>Username:</b> @{data['username'] if data['username'] else '-'}\n"
+        f"📞 <b>Telefon:</b> {data['phone']}\n\n"
+        f"🛣 <b>Yo'nalish:</b> {data['route']}\n"
+        f"📍 <b>Qayerdan:</b> {data['point_a']}\n"
+        f"📍 <b>Qayerga:</b> {data['point_b']}\n"
+        f"🗓 <b>Ketish vaqti:</b> {data['when']}"
     )
 
-
-    await bot.send_message(ADMIN_CHAT_ID, admin_text)
+    try:
+        await bot.send_message(ADMIN_CHAT_ID, admin_text)
+    except Exception as e:
+        logging.error(f"Admin ga xabar yuborishda xatolik: {e}")
 
     final_text = (
         "✅ <b>Buyurtmangiz qabul qilindi!</b>\n\n"
@@ -419,13 +488,3 @@ async def finish_order(message: Message, state: FSMContext):
 if __name__ == "__main__":
     logging.info("Bot ishga tushdi...")
     dp.run_polling(bot)
-
-
-
-
-
-
-
-
-
-
