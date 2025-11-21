@@ -188,36 +188,6 @@ async def is_subscribed(user_id: int, bot: Bot) -> bool:
 # 🤖 BOT INIT
 # =========================================================
 
-# 📌 Авто-пост и авто-пин при добавлении бота в группу
-@dp.my_chat_member()
-async def bot_added(event: types.ChatMemberUpdated):
-    if event.new_chat_member.status == "administrator" or event.new_chat_member.status == "member":
-        chat_id = event.chat.id
-
-        # Отправляем приветственный текст
-        msg = await bot.send_message(chat_id, PIN_TEXT)
-
-        # Закрепляем
-        try:
-            await bot.pin_chat_message(chat_id, msg.message_id, disable_notification=True)
-        except Exception as e:
-            print("Pin error:", e)
-
-
-# 📌 Команда вручную обновить закреп
-@dp.message(Command("updatepin"))
-async def update_pin(message: types.Message):
-    chat_id = message.chat.id
-
-    # Отправляем новое закреп-сообщение
-    msg = await message.answer(PIN_TEXT)
-
-    try:
-        await bot.pin_chat_message(chat_id, msg.message_id, disable_notification=True)
-        await message.answer("🔝 Сообщение обновлено и закреплено!")
-    except Exception as e:
-        await message.answer(f"⚠️ Не получилось закрепить: {e}")
-
 
 # =========================================================
 # 🟢 START
@@ -440,6 +410,7 @@ async def finish_order(message: Message, state: FSMContext):
 if __name__ == "__main__":
     logging.info("Bot ishga tushdi...")
     dp.run_polling(bot)
+
 
 
 
