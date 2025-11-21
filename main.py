@@ -188,11 +188,6 @@ async def is_subscribed(user_id: int, bot: Bot) -> bool:
 # 🤖 BOT INIT
 # =========================================================
 
-logging.basicConfig(level=logging.INFO)
-bot = Bot(token=BOT_TOKEN, default=DefaultBotProperties(parse_mode="HTML"))
-dp = Dispatcher()
-
-
 # 📌 Авто-пост и авто-пин при добавлении бота в группу
 @dp.my_chat_member()
 async def bot_added(event: types.ChatMemberUpdated):
@@ -445,6 +440,7 @@ async def finish_order(message: Message, state: FSMContext):
 if __name__ == "__main__":
     logging.info("Bot ishga tushdi...")
     dp.run_polling(bot)
+
 
 
 
